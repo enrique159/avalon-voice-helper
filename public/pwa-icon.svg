@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+  <title>Avalon Voz</title>
+  <rect width="512" height="512" rx="112" fill="#07111f"/>
+  <path d="M256 54 402 116v116c0 94-58 178-146 226-88-48-146-132-146-226V116L256 54Z" fill="#102a4c" stroke="#d9b85f" stroke-width="18"/>
+  <path d="M256 94 360 138v88c0 68-40 132-104 171-64-39-104-103-104-171v-88L256 94Z" fill="#7f1d2d"/>
+  <path d="M256 132c31 34 48 72 48 114 0 55-21 96-48 116-27-20-48-61-48-116 0-42 17-80 48-114Z" fill="#d9b85f"/>
+  <path d="M177 214c41 8 70 28 79 58-34 0-68-14-99-43l20-15Zm158 0-20 15c-31 29-65 43-99 43 9-30 38-50 79-58h40Z" fill="#f1d98b"/>
+  <circle cx="256" cy="238" r="24" fill="#07111f"/>
+</svg>
