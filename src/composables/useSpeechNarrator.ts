@@ -19,57 +19,68 @@ export function useSpeechNarrator(getSteps: () => ScriptStep[], settings: Narrat
   const isPlaying = ref(false);
   const unsupported = ref(false);
   let playbackToken = 0;
-  let audioContext: AudioContext | undefined;
+  let pauseAudio: HTMLAudioElement | undefined;
 
   const selectedVoice = computed(() => voices.value.find((voice) => voice.voiceURI === settings.voiceURI));
 
-  const ensureAudioContext = async () => {
-    const AudioContextConstructor = window.AudioContext ?? window.webkitAudioContext;
-    if (!AudioContextConstructor) {
-      return undefined;
-    }
-
-    audioContext ??= new AudioContextConstructor();
-    if (audioContext.state === 'suspended') {
-      await audioContext.resume();
-    }
-
-    return audioContext;
+  const getPauseAudio = () => {
+    pauseAudio ??= new Audio('/cronometro.mp3');
+    pauseAudio.loop = true;
+    pauseAudio.preload = 'auto';
+    pauseAudio.volume = 0.45;
+    return pauseAudio;
   };
 
-  const playTick = async () => {
-    const context = await ensureAudioContext();
-    if (!context) {
+  const primePauseAudio = async () => {
+    if (!settings.tickDuringPauses) {
       return;
     }
 
-    const now = context.currentTime;
-    const oscillator = context.createOscillator();
-    const gain = context.createGain();
+    try {
+      const audio = getPauseAudio();
+      audio.load();
+    } catch {
+      // Loading errors should not block narration.
+    }
+  };
 
-    oscillator.type = 'square';
-    oscillator.frequency.setValueAtTime(880, now);
-    gain.gain.setValueAtTime(0.0001, now);
-    gain.gain.exponentialRampToValueAtTime(0.045, now + 0.006);
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.075);
+  const startPauseAudio = async () => {
+    if (!settings.tickDuringPauses) {
+      return;
+    }
 
-    oscillator.connect(gain);
-    gain.connect(context.destination);
-    oscillator.start(now);
-    oscillator.stop(now + 0.08);
+    try {
+      const audio = getPauseAudio();
+      audio.currentTime = 0;
+      await audio.play();
+    } catch {
+      // Some mobile browsers reject auxiliary audio. Narration must continue.
+    }
+  };
+
+  const stopPauseAudio = () => {
+    if (!pauseAudio) {
+      return;
+    }
+
+    pauseAudio.pause();
+    try {
+      pauseAudio.currentTime = 0;
+    } catch {
+      // Ignore seek errors from partially loaded media.
+    }
   };
 
   const waitBetweenSteps = async (seconds: number, token: number) => {
-    for (let remaining = seconds; remaining > 0; remaining -= 1) {
-      if (token !== playbackToken) {
-        return;
-      }
+    const endsAt = Date.now() + seconds * 1000;
+    await startPauseAudio();
 
-      if (settings.tickDuringPauses) {
-        await playTick();
+    try {
+      while (token === playbackToken && Date.now() < endsAt) {
+        await wait(Math.min(250, endsAt - Date.now()));
       }
-
-      await wait(1000);
+    } finally {
+      stopPauseAudio();
     }
   };
 
@@ -120,6 +131,7 @@ export function useSpeechNarrator(getSteps: () => ScriptStep[], settings: Narrat
     playbackToken += 1;
     const token = playbackToken;
     isPlaying.value = true;
+    void primePauseAudio();
 
     for (let stepIndex = index; stepIndex < steps.length; stepIndex += 1) {
       if (token !== playbackToken) {
@@ -143,6 +155,7 @@ export function useSpeechNarrator(getSteps: () => ScriptStep[], settings: Narrat
     playbackToken += 1;
     isPlaying.value = false;
     window.speechSynthesis?.cancel();
+    stopPauseAudio();
   };
 
   const preview = async (text: string) => {
