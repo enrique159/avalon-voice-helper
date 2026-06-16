@@ -78,6 +78,7 @@ const {
   currentIndex,
   isPlaying,
   unsupported,
+  reloadVoices,
   playFrom,
   preview,
   stop
@@ -224,6 +225,7 @@ watch(
         @update:interval-seconds="settings.intervalSeconds = $event"
         @update:tick-during-pauses="settings.tickDuringPauses = $event"
         @preview="previewVoice"
+        @reload-voices="reloadVoices"
       />
 
       <ScriptStepsSection :steps="scriptSteps" :current-index="currentIndex" @play-step="playFrom" />

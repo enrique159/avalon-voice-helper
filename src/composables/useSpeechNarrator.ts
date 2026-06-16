@@ -13,6 +13,9 @@ const wait = (milliseconds: number) =>
     window.setTimeout(resolve, milliseconds);
   });
 
+const isPremiumVoice = (voice: SpeechSynthesisVoice): boolean =>
+  /premium|neural|enhanced/i.test(voice.name);
+
 export function useSpeechNarrator(getSteps: () => ScriptStep[], settings: NarrationSettings) {
   const voices = ref<SpeechSynthesisVoice[]>([]);
   const currentIndex = ref(0);
@@ -92,12 +95,16 @@ export function useSpeechNarrator(getSteps: () => ScriptStep[], settings: Narrat
 
     const availableVoices = window.speechSynthesis.getVoices();
     const spanishVoices = availableVoices.filter((voice) => voice.lang.toLowerCase().startsWith('es'));
-    voices.value = (spanishVoices.length > 0 ? spanishVoices : availableVoices).sort(
-      (a, b) => a.lang.localeCompare(b.lang) || a.name.localeCompare(b.name)
-    );
+    voices.value = (spanishVoices.length > 0 ? spanishVoices : availableVoices).sort((a, b) => {
+      const aIsPremium = isPremiumVoice(a);
+      const bIsPremium = isPremiumVoice(b);
+      if (aIsPremium !== bIsPremium) return aIsPremium ? -1 : 1;
+      return a.lang.localeCompare(b.lang) || a.name.localeCompare(b.name);
+    });
 
     if (!settings.voiceURI && voices.value.length > 0) {
-      settings.voiceURI = voices.value[0].voiceURI;
+      const preferred = voices.value.find((v) => isPremiumVoice(v)) ?? voices.value[0];
+      settings.voiceURI = preferred.voiceURI;
     }
   };
 
@@ -187,11 +194,16 @@ export function useSpeechNarrator(getSteps: () => ScriptStep[], settings: Narrat
 
   onBeforeUnmount(stop);
 
+  const reloadVoices = () => {
+    loadVoices();
+  };
+
   return {
     voices,
     currentIndex,
     isPlaying,
     unsupported,
+    reloadVoices,
     loadVoices,
     playFrom,
     preview,

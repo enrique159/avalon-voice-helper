@@ -14,12 +14,25 @@ defineEmits<{
   'update:intervalSeconds': [intervalSeconds: number];
   'update:tickDuringPauses': [enabled: boolean];
   preview: [];
+  'reload-voices': [];
 }>();
+
+const isPremium = (voice: SpeechSynthesisVoice) =>
+  /premium|neural|enhanced/i.test(voice.name);
 </script>
 
 <template>
   <section class="mb-4 rounded-lg border border-slate-700/80 bg-slate-950/72 p-4">
-    <h2 class="mb-3 text-lg font-semibold text-amber-100">Voz</h2>
+    <div class="mb-3 flex items-center justify-between">
+      <h2 class="text-lg font-semibold text-amber-100">Voz</h2>
+      <button
+        type="button"
+        class="rounded border border-slate-600 px-2 py-0.5 text-xs text-slate-400 hover:text-slate-200"
+        @click="$emit('reload-voices')"
+      >
+        Recargar voces
+      </button>
+    </div>
     <label class="mb-3 block">
       <span class="mb-1 block text-sm text-slate-300">Tipo de voz</span>
       <select
@@ -29,7 +42,7 @@ defineEmits<{
       >
         <option value="">Voz predeterminada</option>
         <option v-for="voice in voices" :key="voice.voiceURI" :value="voice.voiceURI">
-          {{ voice.name }} - {{ voice.lang }}
+          {{ voice.name }} - {{ voice.lang }}{{ isPremium(voice) ? ' ★' : '' }}
         </option>
       </select>
     </label>
@@ -74,6 +87,9 @@ defineEmits<{
         @change="$emit('update:tickDuringPauses', ($event.target as HTMLInputElement).checked)"
       />
     </label>
+    <p v-if="!unsupported && !voices.some((v) => /premium|neural/i.test(v.name))" class="mt-3 text-xs text-slate-500">
+      En Safari (iOS/macOS) hay voces más naturales (Mónica, Paulina, Diego Premium). También puedes instalar más voces en Preferencias del Sistema &gt; Accesibilidad &gt; Contenido hablado.
+    </p>
     <p v-if="unsupported" class="mt-3 text-sm text-rose-200">
       Este navegador no expone síntesis de voz. Puedes seguir usando el guion manualmente.
     </p>
