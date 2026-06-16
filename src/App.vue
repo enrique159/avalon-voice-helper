@@ -40,6 +40,7 @@ interface StoredSettings {
 
 const storageKey = 'avalon-voice-settings';
 const playerCounts: PlayerCount[] = [5, 6, 7, 8, 9, 10];
+const appVersion = __APP_VERSION__;
 
 const loadSettings = (): StoredSettings => {
   const fallback: StoredSettings = {
@@ -228,6 +229,10 @@ watch(
       <ScriptStepsSection :steps="scriptSteps" :current-index="currentIndex" @play-step="playFrom" />
 
       <QuestReference :player-count="settings.playerCount" :quest-sizes="questSizes" />
+
+      <footer class="mt-6 pb-2 text-center text-xs text-slate-500">
+        v{{ appVersion }}
+      </footer>
     </section>
 
     <NarrationBar :is-playing="isPlaying" @play="playFrom(0)" @stop="stop" />
